@@ -10,7 +10,7 @@ public class NodeGrid : MonoBehaviour
     public int gridY;
     public int gCost;
     public int hCost;
-    public Node parent;
+    public NodeGrid parent;
 
     public int fCost
     {

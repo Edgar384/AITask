@@ -15,6 +15,8 @@ public class Grid : MonoBehaviour
     float nodeDiameter;
     int gridSizeX, gridSizeY;
 
+    public List<NodeGrid> path;
+
     void Start()
     {
         nodeDiameter = nodeRadius * 2;
@@ -84,6 +86,15 @@ public class Grid : MonoBehaviour
             foreach (NodeGrid n in grid)
             {
                 Gizmos.color = (n.walkable) ? Color.white : Color.red;
+                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+            }
+        }
+
+        if (path != null)
+        {
+            foreach (NodeGrid n in path)
+            {
+                Gizmos.color = Color.black;
                 Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
             }
         }
