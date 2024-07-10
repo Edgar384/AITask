@@ -2,22 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Grid : MonoBehaviour
+public class GridSystem : MonoBehaviour
 {
-
-
-    public Transform player;
-    public LayerMask unwalkableMask;
     public Vector2 gridWorldSize;
     public float nodeRadius;
-    NodeGrid[,] grid;
+    public LayerMask unwalkableMask;
 
+    NodeGrid[,] grid;
     float nodeDiameter;
     int gridSizeX, gridSizeY;
 
-    public List<NodeGrid> path;
-
-    void Start()
+    void Awake()
     {
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
@@ -83,20 +78,36 @@ public class Grid : MonoBehaviour
 
         if (grid != null)
         {
-            foreach (NodeGrid n in grid)
+            foreach (NodeGrid node in grid)
             {
-                Gizmos.color = (n.walkable) ? Color.white : Color.red;
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
+                Gizmos.color = (node.walkable) ? Color.white : Color.red;
+                Gizmos.DrawCube(node.worldPosition, Vector3.one * (nodeDiameter - 0.1f));
             }
         }
+    }
+}
 
-        if (path != null)
-        {
-            foreach (NodeGrid n in path)
-            {
-                Gizmos.color = Color.black;
-                Gizmos.DrawCube(n.worldPosition, Vector3.one * (nodeDiameter - .1f));
-            }
-        }
+public class NodeGrid
+{
+    public bool walkable;
+    public Vector3 worldPosition;
+    public int gridX;
+    public int gridY;
+
+    public int gCost;
+    public int hCost;
+    public NodeGrid parent;
+
+    public NodeGrid(bool _walkable, Vector3 _worldPos, int _gridX, int _gridY)
+    {
+        walkable = _walkable;
+        worldPosition = _worldPos;
+        gridX = _gridX;
+        gridY = _gridY;
+    }
+
+    public int fCost
+    {
+        get { return gCost + hCost; }
     }
 }

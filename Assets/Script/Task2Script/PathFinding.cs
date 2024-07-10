@@ -5,20 +5,16 @@ using UnityEngine;
 public class PathFinding : MonoBehaviour
 {
 
-    public Transform seeker, target;
-    Grid grid;
+    private GridSystem grid;
+    private List<Vector3> currentPath;
+
 
     void Awake()
     {
-        grid = GetComponent<Grid>();
+        grid = GetComponent<GridSystem>();
     }
 
-    void Update()
-    {
-        FindPath(seeker.position, target.position);
-    }
-
-    void FindPath(Vector3 startPos, Vector3 targetPos)
+    public List<Vector3> FindPath(Vector3 startPos, Vector3 targetPos)
     {
         NodeGrid startNode = grid.NodeFromWorldPoint(startPos);
         NodeGrid targetNode = grid.NodeFromWorldPoint(targetPos);
@@ -43,19 +39,20 @@ public class PathFinding : MonoBehaviour
 
             if (currentNode == targetNode)
             {
-                RetracePath(startNode, targetNode);
-                return;
+                return RetracePath(startNode, targetNode);
             }
 
             foreach (NodeGrid neighbor in grid.GetNeighbors(currentNode))
             {
                 if (!neighbor.walkable || closedSet.Contains(neighbor))
-                    continue;
-
-                int newCostToNeighbor = currentNode.gCost + GetDistance(currentNode, neighbor);
-                if (newCostToNeighbor < neighbor.gCost || !openSet.Contains(neighbor))
                 {
-                    neighbor.gCost = newCostToNeighbor;
+                    continue;
+                }
+
+                int newMovementCostToNeighbor = currentNode.gCost + GetDistance(currentNode, neighbor);
+                if (newMovementCostToNeighbor < neighbor.gCost || !openSet.Contains(neighbor))
+                {
+                    neighbor.gCost = newMovementCostToNeighbor;
                     neighbor.hCost = GetDistance(neighbor, targetNode);
                     neighbor.parent = currentNode;
 
@@ -64,21 +61,23 @@ public class PathFinding : MonoBehaviour
                 }
             }
         }
+
+        return null;
     }
 
-    void RetracePath(NodeGrid startNode, NodeGrid endNode)
+    List<Vector3> RetracePath(NodeGrid startNode, NodeGrid endNode)
     {
-        List<NodeGrid> path = new List<NodeGrid>();
+        List<Vector3> path = new List<Vector3>();
         NodeGrid currentNode = endNode;
 
         while (currentNode != startNode)
         {
-            path.Add(currentNode);
+            path.Add(currentNode.worldPosition);
             currentNode = currentNode.parent;
         }
         path.Reverse();
 
-        grid.path = path; // Store the path in the grid
+        return path;
     }
 
     int GetDistance(NodeGrid nodeA, NodeGrid nodeB)
@@ -89,5 +88,18 @@ public class PathFinding : MonoBehaviour
         if (dstX > dstY)
             return 14 * dstY + 10 * (dstX - dstY);
         return 14 * dstX + 10 * (dstY - dstX);
+    }
+
+
+    void OnDrawGizmos()
+    {
+        if (currentPath != null)
+        {
+            Gizmos.color = Color.green;
+            for (int i = 0; i < currentPath.Count - 1; i++)
+            {
+                Gizmos.DrawLine(currentPath[i], currentPath[i + 1]);
+            }
+        }
     }
 }

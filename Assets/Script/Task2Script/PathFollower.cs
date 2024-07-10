@@ -4,48 +4,31 @@ using UnityEngine;
 
 public class PathFollower : MonoBehaviour
 {
+    public List<Vector3> path;
+    private int currentWaypointIndex = 0;
 
-    public float speed = 5f;
-    public float turnSpeed = 5f;
-    public float stoppingDistance = 1f;
-    private Grid grid;
-    private int targetIndex;
-    private List<NodeGrid> path;
-
-    void Start()
+    public void SetPath(List<Vector3> newPath)
     {
-        grid = GameObject.FindObjectOfType<Grid>();
-        path = grid.path;
-        if (path != null && path.Count > 0)
-        {
-            targetIndex = 0;
-            StartCoroutine(FollowPath());
-        }
+        path = newPath;
+        currentWaypointIndex = 0;
     }
 
-    IEnumerator FollowPath()
+    public Vector3 GetNextWaypoint()
     {
-        while (true)
+        if (currentWaypointIndex < path.Count)
         {
-            if (path == null || path.Count == 0) yield break;
-
-            Vector3 targetPosition = path[targetIndex].worldPosition;
-            targetPosition.y = transform.position.y;
-
-            while (Vector3.Distance(transform.position, targetPosition) > stoppingDistance)
-            {
-                Vector3 direction = (targetPosition - transform.position).normalized;
-                Quaternion lookRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, turnSpeed * Time.deltaTime);
-                transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * Time.deltaTime);
-                yield return null;
-            }
-
-            targetIndex++;
-            if (targetIndex >= path.Count)
-            {
-                yield break;
-            }
+            return path[currentWaypointIndex];
         }
+        return transform.position;
+    }
+
+    public void AdvanceToNextWaypoint()
+    {
+        currentWaypointIndex++;
+    }
+
+    public bool ReachedEndOfPath()
+    {
+        return currentWaypointIndex >= path.Count;
     }
 }
