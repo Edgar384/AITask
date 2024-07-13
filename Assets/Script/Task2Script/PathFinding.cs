@@ -1,13 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static GridSystem;
 
 public class PathFinding : MonoBehaviour
 {
 
     private GridSystem grid;
     private List<Vector3> currentPath;
-
 
     void Awake()
     {
@@ -39,7 +39,8 @@ public class PathFinding : MonoBehaviour
 
             if (currentNode == targetNode)
             {
-                return RetracePath(startNode, targetNode);
+                currentPath = RetracePath(startNode, targetNode);
+                return currentPath;
             }
 
             foreach (NodeGrid neighbor in grid.GetNeighbors(currentNode))
@@ -84,12 +85,11 @@ public class PathFinding : MonoBehaviour
     {
         int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
         int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
+        int dstZ = Mathf.Abs(nodeA.gridZ - nodeB.gridZ);
 
-        if (dstX > dstY)
-            return 14 * dstY + 10 * (dstX - dstY);
-        return 14 * dstX + 10 * (dstY - dstX);
+        int remaining = Mathf.Abs(dstX - dstY);
+        return 14 * Mathf.Min(dstX, dstY) + 10 * remaining + 10 * dstZ;
     }
-
 
     void OnDrawGizmos()
     {

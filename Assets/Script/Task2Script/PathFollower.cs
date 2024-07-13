@@ -6,6 +6,8 @@ public class PathFollower : MonoBehaviour
 {
     public List<Vector3> path;
     private int currentWaypointIndex = 0;
+    public float smoothTime = 0.5f;
+    private Vector3 velocity;
 
     public void SetPath(List<Vector3> newPath)
     {
@@ -30,5 +32,19 @@ public class PathFollower : MonoBehaviour
     public bool ReachedEndOfPath()
     {
         return currentWaypointIndex >= path.Count;
+    }
+
+    void Update()
+    {
+        if (!ReachedEndOfPath())
+        {
+            Vector3 targetPosition = GetNextWaypoint();
+            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref velocity, smoothTime);
+
+            if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
+            {
+                AdvanceToNextWaypoint();
+            }
+        }
     }
 }
