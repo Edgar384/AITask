@@ -7,6 +7,7 @@ public class FuzzyLogic : MonoBehaviour
     public Transform enemy;
     public Transform healthPack;
     public float healthThreshold = 50f;
+    public Transform nearestHealthPack;
 
     private Character character;
 
@@ -33,7 +34,40 @@ public class FuzzyLogic : MonoBehaviour
             MoveTowards(enemy.position);
         }
     }
+    public void Evaluate()
+    {
+        if (character.health <= healthThreshold)
+        {
+            FindNearestHealthPack();
+            if (nearestHealthPack != null)
+            {
+                // Move towards the nearest health pack
+                MoveTowards(nearestHealthPack.position);
+            }
+        }
+        else
+        {
+            // Normal behavior, e.g., patrolling or engaging enemies
+        }
+    }
+    private void FindNearestHealthPack()
+    {
+        HealthPack[] healthPacks = FindObjectsOfType<HealthPack>();
+        float shortestDistance = Mathf.Infinity;
+        Transform closestHealthPack = null;
 
+        foreach (HealthPack healthPack in healthPacks)
+        {
+            float distance = Vector3.Distance(transform.position, healthPack.transform.position);
+            if (distance < shortestDistance)
+            {
+                shortestDistance = distance;
+                closestHealthPack = healthPack.transform;
+            }
+        }
+
+        nearestHealthPack = closestHealthPack;
+    }
     private void MoveTowards(Vector3 target)
     {
         // Movement logic towards the target

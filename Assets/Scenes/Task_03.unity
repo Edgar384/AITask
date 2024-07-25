@@ -1360,6 +1360,11 @@ PrefabInstance:
       objectReference: {fileID: 468606688}
     - target: {fileID: 6339141849209368182, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
         type: 3}
+      propertyPath: nearestHealthPack
+      value: 
+      objectReference: {fileID: 1584575664}
+    - target: {fileID: 6339141849209368182, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+        type: 3}
       propertyPath: healthPackLocations.Array.size
       value: 2
       objectReference: {fileID: 0}

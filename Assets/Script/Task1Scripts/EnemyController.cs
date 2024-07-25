@@ -102,7 +102,11 @@ public class EnemyController : MonoBehaviour
             isChasing = true;
             return;
         }
-
+        Character character = player.GetComponent<Character>();
+        if (character != null)
+        {
+            character.TakeDamage(10f); // Adjust the damage value as needed
+        }
         // Add attack logic here (e.g., reduce player health)
         Debug.Log("Enemy is attacking the player!");
     }
@@ -202,6 +206,15 @@ public class EnemyController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
+        // Check if the collision is with the player
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            Character character = collision.gameObject.GetComponent<Character>();
+            if (character != null)
+            {
+                character.TakeDamage(10f); // Adjust the damage value as needed
+            }
+        }
         // Check if the collision is with a projectile
         Projectile projectile = collision.gameObject.GetComponent<Projectile>();
         if (projectile != null)
