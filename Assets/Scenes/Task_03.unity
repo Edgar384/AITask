@@ -1383,6 +1383,16 @@ PrefabInstance:
       propertyPath: agent
       value: 
       objectReference: {fileID: 1599742823}
+    - target: {fileID: 7002444337325313484, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+        type: 3}
+      propertyPath: fuzzyLogic
+      value: 
+      objectReference: {fileID: 1599742824}
+    - target: {fileID: 7002444337325313484, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+        type: 3}
+      propertyPath: healthText
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 7650954205302112930, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
         type: 3}
       propertyPath: m_Name
@@ -1391,6 +1401,16 @@ PrefabInstance:
     - target: {fileID: 7650954205302112930, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
         type: 3}
       propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7650954205302112932, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7650954205302112933, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+        type: 3}
+      propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7650954205302112934, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
@@ -1480,6 +1500,18 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &1599742824 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6339141849209368182, guid: 4fc74b7198d49fa4a8eb5e624b61c95c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1599742821}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1599742822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46a619e8dbab3ef429b8a0faa9557a2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1599817705
 GameObject:
   m_ObjectHideFlags: 0
@@ -1844,6 +1876,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 7214805428432801491, guid: 70c7f806b61dcf34dabaac13c0a516f9,
+        type: 3}
+      propertyPath: isAttacking
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7214805428432801491, guid: 70c7f806b61dcf34dabaac13c0a516f9,
         type: 3}

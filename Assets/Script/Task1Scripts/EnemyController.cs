@@ -11,6 +11,7 @@ public class EnemyController : MonoBehaviour
     public float sightAngle = 45f;
     public float hearingRange = 10f;
     public float attackRange = 2f;
+    public float damageAmount = 10f;
     public float health = 100f;
     public Transform[] patrolPoints;
 
@@ -206,13 +207,12 @@ public class EnemyController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // Check if the collision is with the player
         if (collision.gameObject.CompareTag("Player"))
         {
             Character character = collision.gameObject.GetComponent<Character>();
             if (character != null)
             {
-                character.TakeDamage(10f); // Adjust the damage value as needed
+                character.TakeDamage(damageAmount);
             }
         }
         // Check if the collision is with a projectile
