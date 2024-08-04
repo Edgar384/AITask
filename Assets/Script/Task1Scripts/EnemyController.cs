@@ -11,7 +11,6 @@ public class EnemyController : MonoBehaviour
     public float sightAngle = 45f;
     public float hearingRange = 10f;
     public float attackRange = 2f;
-    public float damageAmount = 10f;
     public float health = 100f;
     public Transform[] patrolPoints;
 
@@ -23,19 +22,11 @@ public class EnemyController : MonoBehaviour
     public bool isSearching;
     public bool isAttacking;
     private bool isDead;
-    public EnemyStats stats;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
-
-        if (stats != null)
-        {
-            sightRange = stats.sightRange;
-            hearingRange = stats.hearingRange;
-        }
-
         currentPatrolIndex = 0;
         Patrol();
     }
@@ -103,13 +94,13 @@ public class EnemyController : MonoBehaviour
             isChasing = true;
             return;
         }
-        Character character = player.GetComponent<Character>();
-        if (character != null)
-        {
-            character.TakeDamage(10f); // Adjust the damage value as needed
-        }
+
         // Add attack logic here (e.g., reduce player health)
-        Debug.Log("Enemy is attacking the player!");
+        Character playerCharacter = player.GetComponent<Character>();
+        if (playerCharacter != null)
+        {
+            playerCharacter.TakeDamage(10f); // Example damage value
+        }
     }
 
     public void Die()
@@ -207,14 +198,12 @@ public class EnemyController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Player"))
+        Character playerCharacter = collision.gameObject.GetComponent<Character>();
+        if (playerCharacter != null)
         {
-            Character character = collision.gameObject.GetComponent<Character>();
-            if (character != null)
-            {
-                character.TakeDamage(damageAmount);
-            }
+            playerCharacter.TakeDamage(10f); // Example damage value
         }
+
         // Check if the collision is with a projectile
         Projectile projectile = collision.gameObject.GetComponent<Projectile>();
         if (projectile != null)

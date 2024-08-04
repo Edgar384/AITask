@@ -2,10 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CharacterParameters : MonoBehaviour
+[CreateAssetMenu(menuName = "GeneticAlgorithm/Parameters")]
+public class GeneticAlgorithmParameters : ScriptableObject
 {
-
-    public float healthWeight;
-    public float enemyDistanceWeight;
-    public float decisionThreshold;
+    public float healthThreshold;
+    public float movementSpeed;
+    public float fitness;
 }

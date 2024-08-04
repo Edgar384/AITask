@@ -4,89 +4,129 @@ using UnityEngine;
 
 public class GeneticAlgorithm : MonoBehaviour
 {
+
     public GameObject agentPrefab;
     public Transform[] spawnPoints;
     public int populationSize = 10;
-    public int generations = 10;
-    public float mutationRate = 0.1f;
-    public ResultsOutput resultOutput; // Reference to the ResultOutput script
+    public int generations = 50;
+    public float mutationRate = 0.01f;
 
-    private List<GameObject> population = new List<GameObject>();
+    private List<GeneticAlgorithmParameters> population;
+    private int currentGeneration;
+    private float bestFitness;
 
     private void Start()
     {
         InitializePopulation();
-        StartCoroutine(Evolve());
+        StartCoroutine(RunGenerations());
     }
 
     private void InitializePopulation()
     {
+        population = new List<GeneticAlgorithmParameters>();
         for (int i = 0; i < populationSize; i++)
         {
-            GameObject agent = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-            FuzzyLogic fuzzyLogic = agent.GetComponent<FuzzyLogic>();
-            fuzzyLogic.healthThreshold = Random.Range(20f, 80f); // Random initial health threshold
+            GeneticAlgorithmParameters agent = ScriptableObject.CreateInstance<GeneticAlgorithmParameters>();
+            agent.healthThreshold = Random.Range(0, 100);
+            agent.movementSpeed = Random.Range(1, 10);
             population.Add(agent);
+
+            int spawnIndex = i % spawnPoints.Length;
+            Instantiate(agentPrefab, spawnPoints[spawnIndex].position, spawnPoints[spawnIndex].rotation).GetComponent<FuzzyLogic>().movementSpeed = agent.movementSpeed;
         }
     }
 
-    private IEnumerator Evolve()
+    private IEnumerator RunGenerations()
     {
-        for (int generation = 0; generation < generations; generation++)
+        for (currentGeneration = 0; currentGeneration < generations; currentGeneration++)
         {
-            yield return new WaitForSeconds(10f); // Time for each generation to run
-
-            List<GameObject> newPopulation = new List<GameObject>();
-
-            population.Sort((a, b) => CalculateFitness(b).CompareTo(CalculateFitness(a)));
-
-            for (int i = 0; i < populationSize / 2; i++)
-            {
-                GameObject parent1 = population[i];
-                GameObject parent2 = population[populationSize - 1 - i];
-
-                GameObject offspring1 = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-                GameObject offspring2 = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-
-                FuzzyLogic fuzzyLogic1 = offspring1.GetComponent<FuzzyLogic>();
-                FuzzyLogic fuzzyLogic2 = offspring2.GetComponent<FuzzyLogic>();
-
-                fuzzyLogic1.healthThreshold = (parent1.GetComponent<FuzzyLogic>().healthThreshold + parent2.GetComponent<FuzzyLogic>().healthThreshold) / 2;
-
-                if (Random.value < mutationRate) Mutate(fuzzyLogic1);
-                if (Random.value < mutationRate) Mutate(fuzzyLogic2);
-
-                newPopulation.Add(offspring1);
-                newPopulation.Add(offspring2);
-            }
-
-            foreach (GameObject agent in population)
-            {
-                Destroy(agent);
-            }
-
-            population = newPopulation;
-
-            OnGenerationEnd(generation);
+            EvaluateFitness();
+            Select();
+            Crossover();
+            Mutate();
+            yield return new WaitForSeconds(1f);
         }
     }
 
-    private float CalculateFitness(GameObject agent)
+    private void EvaluateFitness()
     {
-        Character character = agent.GetComponent<Character>();
-        return character.health; // Fitness based on health
-    }
-
-    private void Mutate(FuzzyLogic fuzzyLogic)
-    {
-        fuzzyLogic.healthThreshold += Random.Range(-10f, 10f);
-    }
-
-    private void OnGenerationEnd(int generation)
-    {
-        if (resultOutput != null)
+        foreach (var agent in population)
         {
-            resultOutput.LogGenerationResults(generation, population);
+            // Replace this with actual fitness calculation
+            agent.fitness = Random.Range(0, 100);
+            if (agent.fitness > bestFitness)
+            {
+                bestFitness = agent.fitness;
+            }
+        }
+    }
+
+    private void Select()
+    {
+        List<GeneticAlgorithmParameters> newPopulation = new List<GeneticAlgorithmParameters>();
+        float totalFitness = 0f;
+
+        foreach (var agent in population)
+        {
+            totalFitness += agent.fitness;
+        }
+
+        for (int i = 0; i < populationSize; i++)
+        {
+            float randomPoint = Random.Range(0, totalFitness);
+            float cumulativeFitness = 0f;
+
+            foreach (var agent in population)
+            {
+                cumulativeFitness += agent.fitness;
+                if (cumulativeFitness >= randomPoint)
+                {
+                    newPopulation.Add(agent);
+                    break;
+                }
+            }
+        }
+
+        population = newPopulation;
+    }
+
+    private void Crossover()
+    {
+        List<GeneticAlgorithmParameters> newPopulation = new List<GeneticAlgorithmParameters>();
+
+        for (int i = 0; i < populationSize / 2; i++)
+        {
+            int parent1Index = Random.Range(0, populationSize);
+            int parent2Index = Random.Range(0, populationSize);
+
+            GeneticAlgorithmParameters parent1 = population[parent1Index];
+            GeneticAlgorithmParameters parent2 = population[parent2Index];
+
+            GeneticAlgorithmParameters child1 = ScriptableObject.CreateInstance<GeneticAlgorithmParameters>();
+            GeneticAlgorithmParameters child2 = ScriptableObject.CreateInstance<GeneticAlgorithmParameters>();
+
+            child1.healthThreshold = parent1.healthThreshold;
+            child1.movementSpeed = parent2.movementSpeed;
+
+            child2.healthThreshold = parent2.healthThreshold;
+            child2.movementSpeed = parent1.movementSpeed;
+
+            newPopulation.Add(child1);
+            newPopulation.Add(child2);
+        }
+
+        population = newPopulation;
+    }
+
+    private void Mutate()
+    {
+        foreach (var agent in population)
+        {
+            if (Random.value < mutationRate)
+            {
+                agent.healthThreshold = Random.Range(0, 100);
+                agent.movementSpeed = Random.Range(1, 10);
+            }
         }
     }
 }

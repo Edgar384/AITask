@@ -6,17 +6,22 @@ public class HealthPackSpawner : MonoBehaviour
 {
     public GameObject healthPackPrefab;
     public Transform[] spawnPoints;
+    public float spawnInterval = 30f;
 
     private void Start()
     {
-        SpawnHealthPacks();
+        StartCoroutine(SpawnHealthPacks());
     }
 
-    private void SpawnHealthPacks()
+    private IEnumerator SpawnHealthPacks()
     {
-        foreach (Transform spawnPoint in spawnPoints)
+        while (true)
         {
-            Instantiate(healthPackPrefab, spawnPoint.position, spawnPoint.rotation);
+            yield return new WaitForSeconds(spawnInterval);
+            foreach (Transform spawnPoint in spawnPoints)
+            {
+                Instantiate(healthPackPrefab, spawnPoint.position, spawnPoint.rotation);
+            }
         }
     }
 }

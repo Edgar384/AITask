@@ -5,9 +5,9 @@ using UnityEngine;
 public class FuzzyLogic : MonoBehaviour
 {
     public Transform enemy;
-    public Transform healthPack;
-    public float healthThreshold = 50f;
     public Transform nearestHealthPack;
+    public float healthThreshold = 50f;
+    public float movementSpeed = 5f;
 
     private Character character;
 
@@ -18,15 +18,24 @@ public class FuzzyLogic : MonoBehaviour
 
     private void Update()
     {
+        Evaluate();
+    }
+
+    public void Evaluate()
+    {
         if (character.health < healthThreshold)
         {
-            if (Vector3.Distance(transform.position, healthPack.position) < Vector3.Distance(transform.position, enemy.position))
+            FindNearestHealthPack();
+            if (nearestHealthPack != null)
             {
-                MoveTowards(healthPack.position);
-            }
-            else
-            {
-                MoveAwayFrom(enemy.position);
+                if (Vector3.Distance(transform.position, nearestHealthPack.position) < Vector3.Distance(transform.position, enemy.position))
+                {
+                    MoveTowards(nearestHealthPack.position);
+                }
+                else
+                {
+                    MoveAwayFrom(enemy.position);
+                }
             }
         }
         else
@@ -34,22 +43,7 @@ public class FuzzyLogic : MonoBehaviour
             MoveTowards(enemy.position);
         }
     }
-    public void Evaluate()
-    {
-        if (character.health <= healthThreshold)
-        {
-            FindNearestHealthPack();
-            if (nearestHealthPack != null)
-            {
-                // Move towards the nearest health pack
-                MoveTowards(nearestHealthPack.position);
-            }
-        }
-        else
-        {
-            // Normal behavior, e.g., patrolling or engaging enemies
-        }
-    }
+
     private void FindNearestHealthPack()
     {
         HealthPack[] healthPacks = FindObjectsOfType<HealthPack>();
@@ -68,15 +62,14 @@ public class FuzzyLogic : MonoBehaviour
 
         nearestHealthPack = closestHealthPack;
     }
+
     private void MoveTowards(Vector3 target)
     {
-        // Movement logic towards the target
-        transform.position = Vector3.MoveTowards(transform.position, target, Time.deltaTime * 5f);
+        transform.position = Vector3.MoveTowards(transform.position, target, Time.deltaTime * movementSpeed);
     }
 
     private void MoveAwayFrom(Vector3 target)
     {
-        // Movement logic away from the target
-        transform.position = Vector3.MoveTowards(transform.position, transform.position - (target - transform.position), Time.deltaTime * 5f);
+        transform.position = Vector3.MoveTowards(transform.position, transform.position - (target - transform.position), Time.deltaTime * movementSpeed);
     }
 }
