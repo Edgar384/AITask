@@ -1,92 +1,92 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 public class GeneticAlgorithm : MonoBehaviour
 {
-    public GameObject agentPrefab;
-    public Transform[] spawnPoints;
     public int populationSize = 10;
+    public List<FuzzyLogic> population;
+    public float mutationRate = 0.01f;
     public int generations = 10;
-    public float mutationRate = 0.1f;
-    public ResultsOutput resultOutput; // Reference to the ResultOutput script
-
-    private List<GameObject> population = new List<GameObject>();
 
     private void Start()
     {
         InitializePopulation();
-        StartCoroutine(Evolve());
+        //for (int i = 0; i < generations; i++)
+        //{
+        //    EvaluateFitness();
+        //    Select();
+        //    Crossover();
+        //    Mutate();
+        //}
+        ShowResults();
     }
+
+
 
     private void InitializePopulation()
     {
+        population = new List<FuzzyLogic>();
         for (int i = 0; i < populationSize; i++)
         {
-            GameObject agent = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-            FuzzyLogic fuzzyLogic = agent.GetComponent<FuzzyLogic>();
-            fuzzyLogic.healthThreshold = Random.Range(20f, 80f); // Random initial health threshold
-            population.Add(agent);
+            FuzzyLogic individual = Instantiate(Resources.Load<FuzzyLogic>("FuzzyLogicPrefab"));
+            population.Add(individual);
         }
     }
 
-    private IEnumerator Evolve()
+    private void EvaluateFitness()
     {
-        for (int generation = 0; generation < generations; generation++)
+        foreach (var individual in population)
         {
-            yield return new WaitForSeconds(10f); // Time for each generation to run
-
-            List<GameObject> newPopulation = new List<GameObject>();
-
-            population.Sort((a, b) => CalculateFitness(b).CompareTo(CalculateFitness(a)));
-
-            for (int i = 0; i < populationSize / 2; i++)
-            {
-                GameObject parent1 = population[i];
-                GameObject parent2 = population[populationSize - 1 - i];
-
-                GameObject offspring1 = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-                GameObject offspring2 = Instantiate(agentPrefab, spawnPoints[Random.Range(0, spawnPoints.Length)].position, Quaternion.identity);
-
-                FuzzyLogic fuzzyLogic1 = offspring1.GetComponent<FuzzyLogic>();
-                FuzzyLogic fuzzyLogic2 = offspring2.GetComponent<FuzzyLogic>();
-
-                fuzzyLogic1.healthThreshold = (parent1.GetComponent<FuzzyLogic>().healthThreshold + parent2.GetComponent<FuzzyLogic>().healthThreshold) / 2;
-
-                if (Random.value < mutationRate) Mutate(fuzzyLogic1);
-                if (Random.value < mutationRate) Mutate(fuzzyLogic2);
-
-                newPopulation.Add(offspring1);
-                newPopulation.Add(offspring2);
-            }
-
-            foreach (GameObject agent in population)
-            {
-                Destroy(agent);
-            }
-
-            population = newPopulation;
-
-            OnGenerationEnd(generation);
+            individual.character.health = Random.Range(0, individual.character.maxHealth);
+            individual.Evaluate();
         }
     }
 
-    private float CalculateFitness(GameObject agent)
+    private void Select()
     {
-        Character character = agent.GetComponent<Character>();
-        return character.health; // Fitness based on health
+        population.Sort((a, b) => a.character.health.CompareTo(b.character.health));
+        population = population.GetRange(0, populationSize / 2);
     }
 
-    private void Mutate(FuzzyLogic fuzzyLogic)
+    private void Crossover()
     {
-        fuzzyLogic.healthThreshold += Random.Range(-10f, 10f);
-    }
-
-    private void OnGenerationEnd(int generation)
-    {
-        if (resultOutput != null)
+        int originalSize = population.Count;
+        for (int i = 0; i < originalSize; i += 2)
         {
-            resultOutput.LogGenerationResults(generation, population);
+            FuzzyLogic parent1 = population[i];
+            FuzzyLogic parent2 = population[i + 1];
+
+            FuzzyLogic child1 = Instantiate(parent1);
+            FuzzyLogic child2 = Instantiate(parent2);
+
+            float temp = child1.healthThreshold;
+            child1.healthThreshold = child2.healthThreshold;
+            child2.healthThreshold = temp;
+
+            population.Add(child1);
+            population.Add(child2);
+        }
+    }
+
+    private void Mutate()
+    {
+        foreach (var individual in population)
+        {
+            if (Random.value < mutationRate)
+            {
+                individual.healthThreshold += Random.Range(-5f, 5f);
+            }
+        }
+    }
+
+    private void ShowResults()
+    {
+        foreach (var individual in population)
+        {
+            Debug.Log("Health Threshold: " + individual.healthThreshold);
         }
     }
 }
+

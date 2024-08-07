@@ -146,10 +146,10 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  attackDamage: 10
   isChasing: 0
   isSearching: 0
   isAttacking: 0
-  stats: {fileID: 11400000, guid: 5557c7854a914254a81635864c49cecd, type: 2}
 --- !u!114 &7214805428432801490
 MonoBehaviour:
   m_ObjectHideFlags: 0

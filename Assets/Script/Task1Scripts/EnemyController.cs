@@ -11,9 +11,9 @@ public class EnemyController : MonoBehaviour
     public float sightAngle = 45f;
     public float hearingRange = 10f;
     public float attackRange = 2f;
-    public float damageAmount = 10f;
     public float health = 100f;
     public Transform[] patrolPoints;
+    public float attackDamage = 10f;
 
     private NavMeshAgent agent;
     private int currentPatrolIndex;
@@ -23,19 +23,11 @@ public class EnemyController : MonoBehaviour
     public bool isSearching;
     public bool isAttacking;
     private bool isDead;
-    public EnemyStats stats;
 
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
-
-        if (stats != null)
-        {
-            sightRange = stats.sightRange;
-            hearingRange = stats.hearingRange;
-        }
-
         currentPatrolIndex = 0;
         Patrol();
     }
@@ -103,13 +95,12 @@ public class EnemyController : MonoBehaviour
             isChasing = true;
             return;
         }
-        Character character = player.GetComponent<Character>();
-        if (character != null)
+
+        Character playerCharacter = player.GetComponent<Character>();
+        if (playerCharacter != null)
         {
-            character.TakeDamage(10f); // Adjust the damage value as needed
+            playerCharacter.TakeDamage(attackDamage);
         }
-        // Add attack logic here (e.g., reduce player health)
-        Debug.Log("Enemy is attacking the player!");
     }
 
     public void Die()
@@ -117,7 +108,7 @@ public class EnemyController : MonoBehaviour
         isDead = true;
         agent.isStopped = true;
         Debug.Log("Enemy has died!");
-        Destroy(gameObject, 2f); // Delay to allow death animation to play
+        Destroy(gameObject, 2f);
     }
 
     public void CheckSight()
@@ -186,36 +177,14 @@ public class EnemyController : MonoBehaviour
         lastKnownPosition = position;
     }
 
-    void OnDrawGizmos()
-    {
-        // Sight range
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(transform.position, sightRange);
-
-        // Hearing range
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, hearingRange);
-
-        // Sight cone
-        Gizmos.color = Color.red;
-        Vector3 forward = transform.forward * sightRange;
-        Vector3 leftBoundary = Quaternion.Euler(0, -sightAngle / 2, 0) * forward;
-        Vector3 rightBoundary = Quaternion.Euler(0, sightAngle / 2, 0) * forward;
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
-    }
-
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Player"))
+        Character playerCharacter = collision.gameObject.GetComponent<Character>();
+        if (playerCharacter != null)
         {
-            Character character = collision.gameObject.GetComponent<Character>();
-            if (character != null)
-            {
-                character.TakeDamage(damageAmount);
-            }
+            playerCharacter.TakeDamage(attackDamage);
         }
-        // Check if the collision is with a projectile
+
         Projectile projectile = collision.gameObject.GetComponent<Projectile>();
         if (projectile != null)
         {

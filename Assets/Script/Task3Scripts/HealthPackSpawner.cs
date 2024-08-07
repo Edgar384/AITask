@@ -6,17 +6,16 @@ public class HealthPackSpawner : MonoBehaviour
 {
     public GameObject healthPackPrefab;
     public Transform[] spawnPoints;
+    public float spawnInterval = 10f;
 
     private void Start()
     {
-        SpawnHealthPacks();
+        InvokeRepeating(nameof(SpawnHealthPack), spawnInterval, spawnInterval);
     }
 
-    private void SpawnHealthPacks()
+    private void SpawnHealthPack()
     {
-        foreach (Transform spawnPoint in spawnPoints)
-        {
-            Instantiate(healthPackPrefab, spawnPoint.position, spawnPoint.rotation);
-        }
+        int spawnIndex = Random.Range(0, spawnPoints.Length);
+        Instantiate(healthPackPrefab, spawnPoints[spawnIndex].position, Quaternion.identity);
     }
 }
