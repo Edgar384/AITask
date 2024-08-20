@@ -4,63 +4,128 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
+[Serializable]
 public class NeuralNetwork
 {
+    private int inputNodes;
+    private int hiddenNodes;
+    private int outputNodes;
+    private float[,] weightsInputHidden;
+    private float[,] weightsHiddenOutput;
 
-    public float[] weights;
-    public float fitness;
-
-    public NeuralNetwork(int inputSize, int hiddenSize, int outputSize)
+    public NeuralNetwork(int inputNodes, int hiddenNodes, int outputNodes)
     {
-        // Initialize the neural network with random weights
-        weights = new float[(inputSize * hiddenSize) + (hiddenSize * outputSize)];
-        for (int i = 0; i < weights.Length; i++)
-        {
-            weights[i] = UnityEngine.Random.Range(-1f, 1f);
-        }
-        fitness = 0f;
+        this.inputNodes = inputNodes;
+        this.hiddenNodes = hiddenNodes;
+        this.outputNodes = outputNodes;
+
+        weightsInputHidden = new float[inputNodes, hiddenNodes];
+        weightsHiddenOutput = new float[hiddenNodes, outputNodes];
+
+        InitializeWeights();
     }
 
-    public NeuralNetwork(NeuralNetwork copy)
+    private void InitializeWeights()
     {
-        weights = new float[copy.weights.Length];
-        copy.weights.CopyTo(weights, 0);
-        fitness = copy.fitness;
+        // Initialize weights with random values
+        for (int i = 0; i < inputNodes; i++)
+        {
+            for (int j = 0; j < hiddenNodes; j++)
+            {
+                weightsInputHidden[i, j] = UnityEngine.Random.Range(-1f, 1f);
+            }
+        }
+
+        for (int i = 0; i < hiddenNodes; i++)
+        {
+            for (int j = 0; j < outputNodes; j++)
+            {
+                weightsHiddenOutput[i, j] = UnityEngine.Random.Range(-1f, 1f);
+            }
+        }
+    }
+
+    private float Sigmoid(float x)
+    {
+        return 1f / (1f + Mathf.Exp(-x));
     }
 
     public float[] FeedForward(float[] inputs)
     {
-        // Feedforward logic here
-        // Assuming a single hidden layer for simplicity
-        int inputSize = 7;
-        int hiddenSize = 10;
-        int outputSize = 4;
-
-        float[] hidden = new float[hiddenSize];
-        float[] output = new float[outputSize];
-
-        // Input to hidden
-        for (int i = 0; i < hiddenSize; i++)
+        // Hidden layer
+        float[] hidden = new float[hiddenNodes];
+        for (int i = 0; i < hiddenNodes; i++)
         {
-            hidden[i] = 0;
-            for (int j = 0; j < inputSize; j++)
+            float sum = 0f;
+            for (int j = 0; j < inputNodes; j++)
             {
-                hidden[i] += inputs[j] * weights[j + i * inputSize];
+                sum += inputs[j] * weightsInputHidden[j, i];
             }
-            hidden[i] = MathF.Tanh(hidden[i]);
+            hidden[i] = Sigmoid(sum);
         }
 
-        // Hidden to output
-        for (int i = 0; i < outputSize; i++)
+        // Output layer
+        float[] outputs = new float[outputNodes];
+        for (int i = 0; i < outputNodes; i++)
         {
-            output[i] = 0;
-            for (int j = 0; j < hiddenSize; j++)
+            float sum = 0f;
+            for (int j = 0; j < hiddenNodes; j++)
             {
-                output[i] += hidden[j] * weights[inputSize * hiddenSize + j + i * hiddenSize];
+                sum += hidden[j] * weightsHiddenOutput[j, i];
             }
-            output[i] = MathF.Tanh(output[i]);
+            outputs[i] = Sigmoid(sum);
         }
 
-        return output;
+        return outputs;
+    }
+
+    // Mutation function
+    public void Mutate(float mutationRate)
+    {
+        for (int i = 0; i < inputNodes; i++)
+        {
+            for (int j = 0; j < hiddenNodes; j++)
+            {
+                if (UnityEngine.Random.Range(0f, 1f) < mutationRate)
+                {
+                    weightsInputHidden[i, j] += UnityEngine.Random.Range(-0.5f, 0.5f);
+                }
+            }
+        }
+
+        for (int i = 0; i < hiddenNodes; i++)
+        {
+            for (int j = 0; j < outputNodes; j++)
+            {
+                if (UnityEngine.Random.Range(0f, 1f) < mutationRate)
+                {
+                    weightsHiddenOutput[i, j] += UnityEngine.Random.Range(-0.5f, 0.5f);
+                }
+            }
+        }
+    }
+
+    // Crossover function
+    public NeuralNetwork Crossover(NeuralNetwork partner)
+    {
+        NeuralNetwork child = new NeuralNetwork(inputNodes, hiddenNodes, outputNodes);
+
+        for (int i = 0; i < inputNodes; i++)
+        {
+            for (int j = 0; j < hiddenNodes; j++)
+            {
+                child.weightsInputHidden[i, j] = UnityEngine.Random.Range(0f, 1f) < 0.5f ? weightsInputHidden[i, j] : partner.weightsInputHidden[i, j];
+            }
+        }
+
+        for (int i = 0; i < hiddenNodes; i++)
+        {
+            for (int j = 0; j < outputNodes; j++)
+            {
+                child.weightsHiddenOutput[i, j] = UnityEngine.Random.Range(0f, 1f) < 0.5f ? weightsHiddenOutput[i, j] : partner.weightsHiddenOutput[i, j];
+            }
+        }
+
+        return child;
     }
 }

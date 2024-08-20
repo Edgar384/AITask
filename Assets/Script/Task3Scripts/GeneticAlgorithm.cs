@@ -13,13 +13,13 @@ public class GeneticAlgorithm : MonoBehaviour
     private void Start()
     {
         InitializePopulation();
-        //for (int i = 0; i < generations; i++)
-        //{
-        //    EvaluateFitness();
-        //    Select();
-        //    Crossover();
-        //    Mutate();
-        //}
+        for (int i = 0; i < generations; i++)
+        {
+            EvaluateFitness();
+            Select();
+            Crossover();
+            Mutate();
+        }
         ShowResults();
     }
 
