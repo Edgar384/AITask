@@ -1,69 +1,75 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 public class DragonController : MonoBehaviour
 {
-    public Rigidbody rb;
-    public NeuralNetwork neuralNetwork;
-    public float speed = 10f;
-    public float rotationSpeed = 5f;
-    public Transform target;
+    public NeuralNetwork network; // Neural network that controls the dragon
+
+    private Rigidbody rb; // Assuming the dragon has a Rigidbody for physics-based movement
+    public Transform target; // The target the dragon should fly towards
 
     void Start()
     {
-        if (rb == null)
-        {
-            rb = GetComponent<Rigidbody>();
-        }
+        rb = GetComponent<Rigidbody>();
 
-        if (neuralNetwork == null)
-        {
-            neuralNetwork = new NeuralNetwork(9, 6, 4);
-            
-        }
+        // Example: initializing the network with 7 inputs (3 for position, 3 for velocity, 1 for altitude)
+        // and 4 outputs (2 for wing strength, 2 for tail control)
+        int[] layers = new int[] { 7, 10, 10, 4 };
+        network = new NeuralNetwork(layers);
     }
 
     void FixedUpdate()
     {
-        if (neuralNetwork == null || rb == null)
+        FlyTowardsTarget(); // Call the method to control flight every physics frame
+    }
+
+    public void FlyTowardsTarget()
+    {
+        if (network == null || target == null)
         {
-            Debug.LogError("NeuralNetwork or Rigidbody not initialized!");
+            Debug.LogError("Neural Network or target is missing.");
             return;
         }
 
-        // Get the inputs to the neural network
-        Vector3 dragonPosition = transform.position;
-        Vector3 targetPosition = target.position;
-        Vector3 velocity = rb.velocity;
+        // Inputs to the neural network: position (3), velocity (3), altitude difference (1)
+        float[] inputs = new float[7];
+        inputs[0] = transform.position.x;
+        inputs[1] = transform.position.y;
+        inputs[2] = transform.position.z;
+        inputs[3] = rb.velocity.x;
+        inputs[4] = rb.velocity.y;
+        inputs[5] = rb.velocity.z;
+        inputs[6] = target.position.y - transform.position.y; // Altitude difference
 
-        float[] inputs = new float[]
+        // Get the output from the neural network (control for wings and tail)
+        float[] output = network.FeedForward(inputs);
+
+        // Use the output to control the dragon's movement
+        ControlDragon(output);
+    }
+
+    private void ControlDragon(float[] output)
+    {
+        if (output.Length < 4)
         {
-            dragonPosition.x, dragonPosition.y, dragonPosition.z,
-            targetPosition.x, targetPosition.y, targetPosition.z,
-            velocity.x, velocity.y, velocity.z
-        };
+            Debug.LogError("Neural Network output does not match expected size.");
+            return;
+        }
 
-        // Get the outputs from the neural network
-        float[] outputs = neuralNetwork.FeedForward(inputs);
+        // Left and right wing control (output[0] and output[1])
+        float leftWingStrength = output[0];
+        float rightWingStrength = output[1];
 
-        // Assume the outputs are in the range of -1 to 1, and we map them to forces and torques
-        float leftWingFlap = Mathf.Clamp(outputs[0], -1f, 1f) * speed;
-        float rightWingFlap = Mathf.Clamp(outputs[1], -1f, 1f) * speed;
-        float tailHorizontal = Mathf.Clamp(outputs[2], -1f, 1f) * rotationSpeed;
-        float tailVertical = Mathf.Clamp(outputs[3], -1f, 1f) * rotationSpeed;
+        // Tail control (output[2] and output[3])
+        float tailHorizontal = output[2];
+        float tailVertical = output[3];
 
-        // Apply the forces to control the dragon's flight
-        Vector3 liftForce = Vector3.up * (leftWingFlap + rightWingFlap);
-        rb.AddForce(liftForce);
+        // Example of how to apply the forces to the dragon for flying
+        Vector3 wingForce = new Vector3(0, leftWingStrength + rightWingStrength, 0); // Adjust upward force
+        rb.AddForce(wingForce);
 
-        // Apply torque to control yaw and pitch
-        Vector3 torque = new Vector3(-tailVertical, tailHorizontal, 0f);
-        rb.AddTorque(torque);
-
-        // Apply forward movement to the dragon
-        Vector3 forwardForce = transform.forward * Mathf.Abs(leftWingFlap + rightWingFlap) * 0.5f;
-        rb.AddForce(forwardForce);
+        // Tail control for direction (yaw and pitch control)
+        transform.Rotate(tailVertical, tailHorizontal, 0);
     }
 }
