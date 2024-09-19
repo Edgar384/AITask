@@ -48,14 +48,13 @@ public class DragonController : MonoBehaviour
     {
         if (network == null || target == null)
         {
-            return;  // Early exit if required components are missing
+            return; 
         }
 
         // Move the dragon towards the target
         Vector3 direction = (target.position - transform.position).normalized;
         rb.velocity = direction * speed;
 
-        // Get inputs from the environment (8 inputs: 3 for position, 3 for velocity, 2 for target position)
         float[] inputs = new float[]
         {
             transform.position.x, transform.position.y, transform.position.z,
@@ -78,7 +77,7 @@ public class DragonController : MonoBehaviour
         rb.AddTorque(Vector3.up * horizontalTail);   // Yaw control
     }
 
-    // Task 12: Obstacle Handling
+
     private void HandleObstacleAvoidance()
     {
         RaycastHit hit;
@@ -91,7 +90,6 @@ public class DragonController : MonoBehaviour
         }
     }
 
-    // Task 12: Altitude Adjustment
     private void HandleAltitudeAdjustment()
     {
         if (transform.position.y > maxAltitude)
@@ -106,7 +104,6 @@ public class DragonController : MonoBehaviour
         }
     }
 
-    // Task 4: Save Neural Networks
     public void SaveTopNetworks(string path)
     {
         EnsureSaveDirectoryExists();
@@ -114,13 +111,13 @@ public class DragonController : MonoBehaviour
         BinaryFormatter formatter = new BinaryFormatter();
         using (FileStream stream = new FileStream(path, FileMode.Create))
         {
-            formatter.Serialize(stream, topNetworks);  // Serialize the top 10 networks
+            formatter.Serialize(stream, topNetworks);  
         }
 
         Debug.Log("Top neural networks saved to " + path);
     }
 
-    // Task 4: Load Neural Networks
+
     public void LoadTopNetworks(string path)
     {
         if (File.Exists(path))
@@ -139,12 +136,11 @@ public class DragonController : MonoBehaviour
         }
     }
 
-    // Task 9: Experiment with Evolution Parameters
     public void ConfigureEvolutionSettings(int populationSize, float mutationRate, int generations)
     {
-        // Here, you would set your evolution parameters and run the evolutionary algorithm
+        
         Debug.Log($"Configuring evolution with Population Size: {populationSize}, Mutation Rate: {mutationRate}, Generations: {generations}");
-        // Implement the logic for creating populations, mutations, and evolving the networks
+     
     }
 
     private void EnsureSaveDirectoryExists()
