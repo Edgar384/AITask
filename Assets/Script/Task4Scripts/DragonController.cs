@@ -1,75 +1,158 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 public class DragonController : MonoBehaviour
 {
-    public NeuralNetwork network; // Neural network that controls the dragon
+    public NeuralNetwork network;  // The neural network controlling the dragon
+    public Transform target;       // The target the dragon will fly towards
+    public float speed = 10f;
+    public float obstacleAvoidanceDistance = 10f;  // Distance to start avoiding obstacles
+    public float maxAltitude = 50f;                // Maximum allowed altitude before descending
+    public float minAltitude = 5f;                 // Minimum allowed altitude before ascending
 
-    private Rigidbody rb; // Assuming the dragon has a Rigidbody for physics-based movement
-    public Transform target; // The target the dragon should fly towards
+    private Rigidbody rb;
+    private List<NeuralNetwork> topNetworks = new List<NeuralNetwork>();  // To store top 10 networks
 
-    void Start()
+    private void Start()
     {
         rb = GetComponent<Rigidbody>();
 
-        // Example: initializing the network with 7 inputs (3 for position, 3 for velocity, 1 for altitude)
-        // and 4 outputs (2 for wing strength, 2 for tail control)
-        int[] layers = new int[] { 7, 10, 10, 4 };
-        network = new NeuralNetwork(layers);
+        // Ensure the dragon spawns at world position (0, 0, 0)
+        transform.position = Vector3.zero;
+
+        // Initialize the neural network if not assigned
+        if (network == null)
+        {
+            network = new NeuralNetwork();
+            Debug.LogWarning("Neural network was not assigned, initializing a new one.");
+        }
+
+        // Validate if the target is assigned
+        if (target == null)
+        {
+            Debug.LogError("Target is not assigned.");
+        }
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        FlyTowardsTarget(); // Call the method to control flight every physics frame
+        FlyTowardsTarget();
+        HandleObstacleAvoidance();
+        HandleAltitudeAdjustment();
     }
 
     public void FlyTowardsTarget()
     {
         if (network == null || target == null)
         {
-            Debug.LogError("Neural Network or target is missing.");
-            return;
+            return;  // Early exit if required components are missing
         }
 
-        // Inputs to the neural network: position (3), velocity (3), altitude difference (1)
-        float[] inputs = new float[7];
-        inputs[0] = transform.position.x;
-        inputs[1] = transform.position.y;
-        inputs[2] = transform.position.z;
-        inputs[3] = rb.velocity.x;
-        inputs[4] = rb.velocity.y;
-        inputs[5] = rb.velocity.z;
-        inputs[6] = target.position.y - transform.position.y; // Altitude difference
+        // Move the dragon towards the target
+        Vector3 direction = (target.position - transform.position).normalized;
+        rb.velocity = direction * speed;
 
-        // Get the output from the neural network (control for wings and tail)
+        // Get inputs from the environment (8 inputs: 3 for position, 3 for velocity, 2 for target position)
+        float[] inputs = new float[]
+        {
+            transform.position.x, transform.position.y, transform.position.z,
+            rb.velocity.x, rb.velocity.y, rb.velocity.z,
+            target.position.x, target.position.y
+        };
+
+        // Get network output (assuming 8 inputs and 4 outputs)
         float[] output = network.FeedForward(inputs);
 
-        // Use the output to control the dragon's movement
-        ControlDragon(output);
+        // Simulate wing flaps and tail movements based on neural network output
+        float leftWingFlap = output[0];
+        float rightWingFlap = output[1];
+        float horizontalTail = output[2];
+        float verticalTail = output[3];
+
+        // Apply forces and torques based on network output
+        rb.AddForce(Vector3.up * (leftWingFlap + rightWingFlap) * 10);  // Wing flap control
+        rb.AddTorque(Vector3.right * verticalTail);  // Pitch control
+        rb.AddTorque(Vector3.up * horizontalTail);   // Yaw control
     }
 
-    private void ControlDragon(float[] output)
+    // Task 12: Obstacle Handling
+    private void HandleObstacleAvoidance()
     {
-        if (output.Length < 4)
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, transform.forward, out hit, obstacleAvoidanceDistance))
         {
-            Debug.LogError("Neural Network output does not match expected size.");
-            return;
+            // If obstacle detected, steer around it
+            Vector3 avoidDirection = Vector3.Cross(hit.normal, Vector3.up);  // Simple avoidance by changing direction
+            rb.velocity = avoidDirection * speed;
+            Debug.Log("Avoiding obstacle.");
+        }
+    }
+
+    // Task 12: Altitude Adjustment
+    private void HandleAltitudeAdjustment()
+    {
+        if (transform.position.y > maxAltitude)
+        {
+            rb.velocity += Vector3.down * speed * 0.5f;  // Fly down if too high
+            Debug.Log("Descending due to high altitude.");
+        }
+        else if (transform.position.y < minAltitude)
+        {
+            rb.velocity += Vector3.up * speed * 0.5f;  // Fly up if too low
+            Debug.Log("Ascending due to low altitude.");
+        }
+    }
+
+    // Task 4: Save Neural Networks
+    public void SaveTopNetworks(string path)
+    {
+        EnsureSaveDirectoryExists();
+
+        BinaryFormatter formatter = new BinaryFormatter();
+        using (FileStream stream = new FileStream(path, FileMode.Create))
+        {
+            formatter.Serialize(stream, topNetworks);  // Serialize the top 10 networks
         }
 
-        // Left and right wing control (output[0] and output[1])
-        float leftWingStrength = output[0];
-        float rightWingStrength = output[1];
+        Debug.Log("Top neural networks saved to " + path);
+    }
 
-        // Tail control (output[2] and output[3])
-        float tailHorizontal = output[2];
-        float tailVertical = output[3];
+    // Task 4: Load Neural Networks
+    public void LoadTopNetworks(string path)
+    {
+        if (File.Exists(path))
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            using (FileStream stream = new FileStream(path, FileMode.Open))
+            {
+                topNetworks = (List<NeuralNetwork>)formatter.Deserialize(stream);
+            }
 
-        // Example of how to apply the forces to the dragon for flying
-        Vector3 wingForce = new Vector3(0, leftWingStrength + rightWingStrength, 0); // Adjust upward force
-        rb.AddForce(wingForce);
+            Debug.Log("Top neural networks loaded from " + path);
+        }
+        else
+        {
+            Debug.LogError("No saved neural networks found at " + path);
+        }
+    }
 
-        // Tail control for direction (yaw and pitch control)
-        transform.Rotate(tailVertical, tailHorizontal, 0);
+    // Task 9: Experiment with Evolution Parameters
+    public void ConfigureEvolutionSettings(int populationSize, float mutationRate, int generations)
+    {
+        // Here, you would set your evolution parameters and run the evolutionary algorithm
+        Debug.Log($"Configuring evolution with Population Size: {populationSize}, Mutation Rate: {mutationRate}, Generations: {generations}");
+        // Implement the logic for creating populations, mutations, and evolving the networks
+    }
+
+    private void EnsureSaveDirectoryExists()
+    {
+        string savePath = "Assets/SaveData/";
+        if (!Directory.Exists(savePath))
+        {
+            Directory.CreateDirectory(savePath);
+        }
     }
 }

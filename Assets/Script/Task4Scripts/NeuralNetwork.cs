@@ -1,120 +1,55 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+
 
 public class NeuralNetwork
 {
-    public float fitness; // Fitness value for the evolutionary algorithm
-    private int[] layers; // Layers of the neural network
-    private float[][] neurons; // Neurons in each layer
-    public float[][][] weights; // Weights between the layers (made public for easier access in copy constructor)
+    public float[] weights;
+    public float fitness;
 
-    // Standard constructor for creating a neural network
-    public NeuralNetwork(int[] layers)
+    public NeuralNetwork()
     {
-        this.layers = layers;
-        InitNeurons();
-        InitWeights();
-    }
-
-    // Copy constructor for creating a copy of an existing neural network
-    public NeuralNetwork(NeuralNetwork copyNetwork)
-    {
-        this.layers = (int[])copyNetwork.layers.Clone();
-        InitNeurons(); // Initialize neurons based on layers
-        InitWeights(); // Initialize weights with same structure
-
-        // Copy the weights from the existing network
+        // Initialize weights randomly (size adjusted to match inputs and outputs)
+        weights = new float[8];  // Assume 8 weights corresponding to 8 inputs
         for (int i = 0; i < weights.Length; i++)
         {
-            for (int j = 0; j < weights[i].Length; j++)
-            {
-                for (int k = 0; k < weights[i][j].Length; k++)
-                {
-                    weights[i][j][k] = copyNetwork.weights[i][j][k];
-                }
-            }
+            weights[i] = UnityEngine.Random.Range(-1f, 1f);
         }
     }
 
-    // Initialize neurons array
-    private void InitNeurons()
-    {
-        neurons = new float[layers.Length][];
-        for (int i = 0; i < layers.Length; i++)
-        {
-            neurons[i] = new float[layers[i]];
-        }
-    }
-
-    // Initialize weights array
-    private void InitWeights()
-    {
-        weights = new float[layers.Length - 1][][];
-        for (int i = 0; i < weights.Length; i++)
-        {
-            weights[i] = new float[layers[i]][];
-            for (int j = 0; j < weights[i].Length; j++)
-            {
-                weights[i][j] = new float[layers[i + 1]];
-
-                // Randomize weights
-                for (int k = 0; k < weights[i][j].Length; k++)
-                {
-                    weights[i][j][k] = UnityEngine.Random.Range(-0.5f, 0.5f);
-                }
-            }
-        }
-    }
-
-    // Feedforward function
     public float[] FeedForward(float[] inputs)
     {
-        if (inputs.Length != neurons[0].Length)
+        // Ensure the input size matches expected size
+        if (inputs.Length != 8)
         {
-            Debug.LogError("Input size does not match the neural network input layer size.");
-            return new float[0]; // Return empty array if mismatch
+            throw new IndexOutOfRangeException("Input size must match the number of neurons in the input layer.");
         }
 
-        // Set input neurons
-        for (int i = 0; i < inputs.Length; i++)
-        {
-            neurons[0][i] = inputs[i];
-        }
+        float[] output = new float[4];  // 4 outputs: 2 for wings, 2 for tail
+        output[0] = weights[0] * inputs[0] + weights[1] * inputs[1];  // Left wing flap
+        output[1] = weights[2] * inputs[2] + weights[3] * inputs[3];  // Right wing flap
+        output[2] = weights[4] * inputs[4] + weights[5] * inputs[5];  // Horizontal tail
+        output[3] = weights[6] * inputs[6] + weights[7] * inputs[7];  // Vertical tail
 
-        // Feedforward through each layer
-        for (int i = 1; i < layers.Length; i++)
-        {
-            for (int j = 0; j < neurons[i].Length; j++)
-            {
-                float value = 0f;
-                for (int k = 0; k < neurons[i - 1].Length; k++)
-                {
-                    value += neurons[i - 1][k] * weights[i - 1][k][j];
-                }
-                neurons[i][j] = Mathf.Tan(value); // Activation function
-            }
-        }
-
-        return neurons[neurons.Length - 1]; // Return output layer
+        return output;
     }
 
-    // Mutate weights
-    public void Mutate(float mutationRate)
+    public NeuralNetwork Crossover(NeuralNetwork other)
+    {
+        NeuralNetwork offspring = new NeuralNetwork();
+        for (int i = 0; i < weights.Length; i++)
+        {
+            offspring.weights[i] = UnityEngine.Random.value > 0.5f ? this.weights[i] : other.weights[i];
+        }
+        return offspring;
+    }
+
+    public void Mutate()
     {
         for (int i = 0; i < weights.Length; i++)
         {
-            for (int j = 0; j < weights[i].Length; j++)
+            if (UnityEngine.Random.value < 0.1f)  // 10% chance to mutate each weight
             {
-                for (int k = 0; k < weights[i][j].Length; k++)
-                {
-                    float randomNumber = UnityEngine.Random.Range(0f, 100f);
-                    if (randomNumber < mutationRate)
-                    {
-                        weights[i][j][k] = UnityEngine.Random.Range(-0.5f, 0.5f);
-                    }
-                }
+                weights[i] += UnityEngine.Random.Range(-0.5f, 0.5f);
             }
         }
     }

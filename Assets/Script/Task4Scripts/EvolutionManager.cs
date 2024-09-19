@@ -5,89 +5,62 @@ using UnityEngine;
 
 public class EvolutionManager : MonoBehaviour
 {
-    public int populationSize = 10;
-    public float mutationRate = 0.05f;
-    public int generations = 50;
-
-    private List<NeuralNetwork> population;
     public GameObject dragonPrefab;
-    public Transform target;
+    public int populationSize = 20;
+    public Transform target;  // The target for the dragons to fly towards
+    public float spawnSpacing = 2.0f;  // Spacing to avoid dragon collision during spawn
+    private List<DragonController> population = new List<DragonController>();
 
-    void Start()
+    private void Start()
     {
-        StartCoroutine(Evolve());
+        StartCoroutine(SpawnDragons());
     }
 
-    private IEnumerator Evolve()
+    private IEnumerator SpawnDragons()
     {
-        // Initialize population
-        population = new List<NeuralNetwork>();
-
         for (int i = 0; i < populationSize; i++)
         {
-            // Initialize neural network for each dragon in the population
-            int[] layers = new int[] { 7, 10, 10, 4 }; // Input and output size should match the DragonController's network
-            NeuralNetwork network = new NeuralNetwork(layers);
-            population.Add(network);
-        }
+            Vector3 spawnPosition = new Vector3(i * spawnSpacing, 0, 0);  // Spread spawn positions
+            GameObject dragon = Instantiate(dragonPrefab, spawnPosition, Quaternion.identity);
+            DragonController dragonController = dragon.GetComponent<DragonController>();
 
-        // Loop through generations
-        for (int gen = 0; gen < generations; gen++)
-        {
-            // Instantiate dragons and assign networks
-            List<DragonController> dragonControllers = new List<DragonController>();
+            // Ensure a neural network and target are assigned
+            dragonController.network = new NeuralNetwork();
+            dragonController.target = target;
 
-            for (int i = 0; i < population.Count; i++)
-            {
-                GameObject dragon = Instantiate(dragonPrefab);
-                DragonController controller = dragon.GetComponent<DragonController>();
-                controller.network = population[i]; // Assign neural network
-                controller.target = target; // Set the target
+            population.Add(dragonController);
 
-                dragonControllers.Add(controller);
-            }
-
-            // Let the dragons fly for a while (duration of simulation)
-            yield return new WaitForSeconds(10f); // Simulate for 10 seconds
-
-            // Evaluate fitness for each dragon
-            for (int i = 0; i < dragonControllers.Count; i++)
-            {
-                DragonController dragon = dragonControllers[i];
-                NeuralNetwork network = dragon.network;
-
-                // Fitness can be distance to target, smoothness of flight, etc.
-                float distanceToTarget = Vector3.Distance(dragon.transform.position, target.position);
-                network.fitness = 1f / distanceToTarget; // Example fitness function
-            }
-
-            // Breed new population based on fitness
-            population = BreedNewPopulation();
-
-            // Destroy all the dragons from this generation
-            foreach (var dragon in dragonControllers)
-            {
-                Destroy(dragon.gameObject);
-            }
+            yield return null;  // Small delay to prevent simultaneous spawning
         }
     }
 
-    private List<NeuralNetwork> BreedNewPopulation()
+    public void EvaluateFitness()
     {
-        List<NeuralNetwork> newPopulation = new List<NeuralNetwork>();
-
-        // Sort by fitness (descending)
-        population.Sort((a, b) => b.fitness.CompareTo(a.fitness));
-
-        for (int i = 0; i < populationSize; i++)
+        foreach (DragonController dragon in population)
         {
-            NeuralNetwork parentA = population[i];
-            NeuralNetwork offspring = new NeuralNetwork(parentA); // Clone parentA
-            offspring.Mutate(mutationRate); // Mutate the offspring
+            float distanceToTarget = Vector3.Distance(dragon.transform.position, dragon.target.position);
+            dragon.network.fitness = 1.0f / (distanceToTarget + 1);  // Fitness increases as distance decreases
+        }
+    }
 
-            newPopulation.Add(offspring);
+    public void EvolvePopulation()
+    {
+        population.Sort((a, b) => b.network.fitness.CompareTo(a.network.fitness));  // Sort by fitness
+
+        List<NeuralNetwork> newGeneration = new List<NeuralNetwork>();
+
+        for (int i = 0; i < populationSize / 2; i++)
+        {
+            NeuralNetwork parentA = population[i].network;
+            NeuralNetwork parentB = population[i + 1].network;
+            NeuralNetwork offspring = parentA.Crossover(parentB);
+            offspring.Mutate();
+            newGeneration.Add(offspring);
         }
 
-        return newPopulation;
+        for (int i = 0; i < populationSize / 2; i++)
+        {
+            population[i].network = newGeneration[i];
+        }
     }
 }
