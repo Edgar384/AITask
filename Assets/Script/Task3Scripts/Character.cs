@@ -7,25 +7,25 @@ using UnityEngine.AI;
 
 public class Character : MonoBehaviour
 {
+
     public float health = 100f;
     public float maxHealth = 100f;
-    public FuzzyLogic fuzzyLogic;
+    public float moveSpeed = 5f;
 
-    private void Start()
+    public void TakeDamage(float amount)
     {
-        fuzzyLogic = GetComponent<FuzzyLogic>();
-    }
-
-    public void TakeDamage(float damage)
-    {
-        health -= damage;
+        health -= amount;
         health = Mathf.Clamp(health, 0, maxHealth);
-        fuzzyLogic.Evaluate();
     }
 
-    public void RestoreHealth(float amount)
+    public void Heal(float amount)
     {
         health += amount;
         health = Mathf.Clamp(health, 0, maxHealth);
+    }
+
+    public bool IsAlive()
+    {
+        return health > 0;
     }
 }

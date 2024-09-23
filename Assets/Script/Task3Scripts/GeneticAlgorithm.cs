@@ -5,25 +5,22 @@ using UnityEngine.TextCore.Text;
 
 public class GeneticAlgorithm : MonoBehaviour
 {
-    public int populationSize = 10;
     public List<FuzzyLogic> population;
-    public float mutationRate = 0.01f;
-    public int generations = 10;
+    public int populationSize = 10;
+    public int generations = 50;
+    public float mutationRate = 0.05f;
+    public float crossoverRate = 0.7f;
 
     private void Start()
     {
         InitializePopulation();
         for (int i = 0; i < generations; i++)
         {
-            EvaluateFitness();
-            Select();
-            Crossover();
-            Mutate();
+            EvaluatePopulation();
+            SelectAndBreed();
+            MutatePopulation();
         }
-        ShowResults();
     }
-
-
 
     private void InitializePopulation()
     {
@@ -35,57 +32,78 @@ public class GeneticAlgorithm : MonoBehaviour
         }
     }
 
-    private void EvaluateFitness()
+    private void EvaluatePopulation()
     {
+        foreach (FuzzyLogic agent in population)
+        {
+            float fitness = FitnessFunction.EvaluateFitness(agent);  // Reference the static method in FitnessFunction
+            agent.fitness = fitness;  // Set the fitness value
+        }
+    }
+
+    private void SelectAndBreed()
+    {
+        List<FuzzyLogic> newPopulation = new List<FuzzyLogic>();
+
+        for (int i = 0; i < populationSize; i++)
+        {
+            FuzzyLogic parent1 = SelectParent();
+            FuzzyLogic parent2 = SelectParent();
+
+            FuzzyLogic offspring;
+            if (Random.value < crossoverRate)
+            {
+                offspring = Crossover(parent1, parent2);
+            }
+            else
+            {
+                offspring = Instantiate(parent1);
+            }
+
+            newPopulation.Add(offspring);
+        }
+
+        population = newPopulation;
+    }
+
+    private FuzzyLogic SelectParent()
+    {
+        float totalFitness = 0;
         foreach (var individual in population)
         {
-            individual.character.health = Random.Range(0, individual.character.maxHealth);
-            individual.Evaluate();
+            totalFitness += individual.fitness;
         }
-    }
 
-    private void Select()
-    {
-        population.Sort((a, b) => a.character.health.CompareTo(b.character.health));
-        population = population.GetRange(0, populationSize / 2);
-    }
-
-    private void Crossover()
-    {
-        int originalSize = population.Count;
-        for (int i = 0; i < originalSize; i += 2)
+        float randomValue = Random.value * totalFitness;
+        float cumulativeFitness = 0;
+        foreach (var individual in population)
         {
-            FuzzyLogic parent1 = population[i];
-            FuzzyLogic parent2 = population[i + 1];
-
-            FuzzyLogic child1 = Instantiate(parent1);
-            FuzzyLogic child2 = Instantiate(parent2);
-
-            float temp = child1.healthThreshold;
-            child1.healthThreshold = child2.healthThreshold;
-            child2.healthThreshold = temp;
-
-            population.Add(child1);
-            population.Add(child2);
+            cumulativeFitness += individual.fitness;
+            if (cumulativeFitness >= randomValue)
+            {
+                return individual;
+            }
         }
+        return population[0];
     }
 
-    private void Mutate()
+    private FuzzyLogic Crossover(FuzzyLogic parent1, FuzzyLogic parent2)
+    {
+        FuzzyLogic offspring = Instantiate(parent1);
+        offspring.healthThreshold = (parent1.healthThreshold + parent2.healthThreshold) / 2;
+        offspring.dangerThreshold = (parent1.dangerThreshold + parent2.dangerThreshold) / 2;
+        return offspring;
+    }
+
+    private void MutatePopulation()
     {
         foreach (var individual in population)
         {
             if (Random.value < mutationRate)
             {
-                individual.healthThreshold += Random.Range(-5f, 5f);
+                individual.healthThreshold += Random.Range(-10f, 10f);
+                individual.dangerThreshold += Random.Range(-5f, 5f);
             }
-        }
-    }
-
-    private void ShowResults()
-    {
-        foreach (var individual in population)
-        {
-            Debug.Log("Health Threshold: " + individual.healthThreshold);
         }
     }
 }
